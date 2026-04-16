@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace TicTacToe.Form
 {
-    public partial class GameFormcs : Form
+    public partial class MainMenuFormcs : Form
     {
-        public GameFormcs()
+        public MainMenuFormcs()
         {
             InitializeComponent();
         }
