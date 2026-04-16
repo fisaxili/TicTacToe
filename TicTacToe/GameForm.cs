@@ -96,6 +96,118 @@ public partial class GameForm : Form
             BotMoveAsync();
     }
 
+    /// <summary>
+    /// Асинхронно выполняет ход бота с небольшой задержкой для реалистичности.
+    /// На время хода бота поле блокируется.
+    /// </summary>
+    private async void BotMoveAsync()
+    {
+        SetBoardEnabled(false);
+        await Task.Delay(400); // пауза имитирует "раздумье" бота
+
+        if (_engine.IsGameOver) { SetBoardEnabled(true); return; }
+
+        var (r, c) = _engine.MakeBotMove();
+        UpdateCellUI(r, c);
+        UpdateUI();
+        SetBoardEnabled(true);
+    }
+
+    /// <summary>
+    /// Обновляет визуальное состояние одной клетки после хода.
+    /// </summary>
+    /// <param name="row">Строка клетки (0–2).</param>
+    /// <param name="col">Столбец клетки (0–2).</param>
+    private void UpdateCellUI(int row, int col)
+    {
+        var btn = _cells[row, col];
+        var val = _engine.Board[row, col];
+        btn.Text = val == CellValue.X ? "X" : "O";
+        btn.ForeColor = val == CellValue.X ? ColorX : ColorO;
+        btn.Enabled = false;
+    }
+
+    /// <summary>
+    /// Обновляет метки статуса и счёта в соответствии с текущим состоянием игры.
+    /// При окончании игры подсвечивает победную линию и выводит результат.
+    /// </summary>
+    private void UpdateUI()
+    {
+        if (_engine.IsGameOver)
+        {
+            HighlightWinningLine();
+            string winnerX = _engine.Player1.Symbol == CellValue.X ? _engine.Player1.Name : _engine.Player2.Name;
+            string winnerO = _engine.Player1.Symbol == CellValue.O ? _engine.Player1.Name : _engine.Player2.Name;
+            string msg = _engine.Result switch
+            {
+                GameResult.PlayerXWins => $"🎉 Победил {winnerX}!",
+                GameResult.PlayerOWins => $"🎉 Победил {winnerO}!",
+                GameResult.Draw => "🤝 Ничья!",
+                _ => ""
+            };
+            lblStatus.Text = msg;
+            lblStatus.ForeColor = _engine.Result == GameResult.Draw
+                ? Color.FromArgb(255, 200, 80)
+                : ColorWin;
+        }
+        else
+        {
+            var cur = _engine.CurrentPlayer;
+            lblStatus.Text = $"Ходит: {cur.Name}  [{(cur.Symbol == CellValue.X ? "X" : "O")}]";
+            lblStatus.ForeColor = cur.Symbol == CellValue.X ? ColorX : ColorO;
+        }
+
+        lblScore1.Text = $"{_engine.Player1.Name}: {_engine.Player1.Score}";
+        lblScore2.Text = $"{_engine.Player2.Name}: {_engine.Player2.Score}";
+    }
+
+    /// <summary>
+    /// Перебирает все возможные линии и подсвечивает победную, если она есть.
+    /// </summary>
+    private void HighlightWinningLine()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            if (CheckLine((i, 0), (i, 1), (i, 2))) return; // горизонталь
+            if (CheckLine((0, i), (1, i), (2, i))) return; // вертикаль
+        }
+        CheckLine((0, 0), (1, 1), (2, 2)); // главная диагональ
+        CheckLine((0, 2), (1, 1), (2, 0)); // побочная диагональ
+    }
+
+    /// <summary>
+    /// Проверяет, образуют ли три клетки победную линию.
+    /// Если да — подсвечивает их зелёным цветом.
+    /// </summary>
+    /// <returns><c>true</c> если линия победная, иначе <c>false</c>.</returns>
+    private bool CheckLine((int r, int c) a, (int r, int c) b, (int r, int c) c2)
+    {
+        var va = _engine.Board[a.r, a.c];
+        if (va == CellValue.Empty) return false;
+        if (va == _engine.Board[b.r, b.c] && va == _engine.Board[c2.r, c2.c])
+        {
+            _cells[a.r, a.c].BackColor = Color.FromArgb(20, 60, 20);
+            _cells[b.r, b.c].BackColor = Color.FromArgb(20, 60, 20);
+            _cells[c2.r, c2.c].BackColor = Color.FromArgb(20, 60, 20);
+            _cells[a.r, a.c].ForeColor = ColorWin;
+            _cells[b.r, b.c].ForeColor = ColorWin;
+            _cells[c2.r, c2.c].ForeColor = ColorWin;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Включает или отключает все свободные клетки поля.
+    /// Используется для блокировки поля во время хода бота.
+    /// </summary>
+    /// <param name="enabled"><c>true</c> — разблокировать, <c>false</c> — заблокировать.</param>
+    private void SetBoardEnabled(bool enabled)
+    {
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+                if (_engine.Board[r, c] == CellValue.Empty)
+                    _cells[r, c].Enabled = enabled;
     }
 
     /// <summary>
@@ -133,7 +245,19 @@ public partial class GameForm : Form
         Close();
     }
 
-
+    /// <summary>
+    /// Сбрасывает визуальное состояние всех клеток поля к начальному виду.
+    /// </summary>
+    private void ResetBoardUI()
+    {
+        for (int r = 0; r < 3; r++)
+        {
+            for (int c = 0; c < 3; c++)
+            {
+                _cells[r, c].Text = "";
+                _cells[r, c].Enabled = true;
+                _cells[r, c].BackColor = Color.FromArgb(30, 30, 50);
+                _cells[r, c].ForeColor = Color.White;
             }
         }
     }
