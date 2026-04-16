@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace TicTacToe.Form
 {
-    public partial class MainMenuFormcs : Form
+    public partial class MainMenuForm : Form
     {
-        public MainMenuFormcs()
+        public MainMenuForm()
         {
             InitializeComponent();
         }
