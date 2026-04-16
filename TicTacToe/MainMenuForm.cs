@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TicTacToe.Form
+namespace TicTacToe
 {
     public partial class MainMenuForm : Form
     {

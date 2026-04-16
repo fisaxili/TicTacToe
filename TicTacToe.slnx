@@ -1,4 +1,4 @@
 <Solution>
   <Project Path="TicTacToe.Logic/TicTacToe.Logic.csproj" />
-  <Project Path="TicTacToe/TicTacToe.Form.csproj" />
+  <Project Path="TicTacToe/TicTacToe.csproj" />
 </Solution>
