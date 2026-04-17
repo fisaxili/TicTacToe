@@ -1,5 +1,5 @@
 <Solution>
   <Project Path="TicTacToe.Logic/TicTacToe.Logic.csproj" />
-  <Project Path="TicTacToe.Tests/TicTacToe.Tests.csproj" Id="763a3e4a-fe01-4c86-bd37-a7f4b9db926a" />
+  <Project Path="TicTacToe.Tests/TicTacToe.Tests.csproj" />
   <Project Path="TicTacToe/TicTacToe.csproj" />
 </Solution>
