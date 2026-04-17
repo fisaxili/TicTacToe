@@ -1,7 +1,7 @@
 ﻿namespace TicTacToe.Logic;
 
 /// <summary>
-/// Представляет игрока — человека или компьютерного бота.
+/// Представляет игрока.
 /// Хранит имя, символ и текущий счёт побед.
 /// </summary>
 public class Player
@@ -12,9 +12,6 @@ public class Player
     /// <summary>Символ игрока на поле: X или O.</summary>
     public CellValue Symbol { get; }
 
-    /// <summary>Признак того, что игрок управляется компьютером.</summary>
-    public bool IsBot { get; }
-
     /// <summary>Количество побед в текущей сессии.</summary>
     public int Score { get; private set; }
 
@@ -23,11 +20,10 @@ public class Player
     /// </summary>
     /// <param name="name">Имя игрока. Не может быть пустым.</param>
     /// <param name="symbol">Символ игрока (X или O). Не может быть <see cref="CellValue.Empty"/>.</param>
-    /// <param name="isBot"><c>true</c> если игрок управляется компьютером.</param>
     /// <exception cref="ArgumentException">
     /// Если имя пустое или символ равен <see cref="CellValue.Empty"/>.
     /// </exception>
-    public Player(string name, CellValue symbol, bool isBot = false)
+    public Player(string name, CellValue symbol)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Имя игрока не может быть пустым.", nameof(name));
@@ -36,7 +32,6 @@ public class Player
 
         Name = name;
         Symbol = symbol;
-        IsBot = isBot;
     }
 
     /// <summary>Увеличивает счёт побед на 1.</summary>

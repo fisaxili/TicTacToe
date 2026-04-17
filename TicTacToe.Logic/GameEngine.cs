@@ -32,10 +32,13 @@ public class GameEngine
     /// <exception cref="ArgumentException">Если оба игрока имеют одинаковый символ.</exception>
     public GameEngine(Player player1, Player player2)
     {
-        Player1 = player1 ?? throw new ArgumentNullException(nameof(player1));
-        Player2 = player2 ?? throw new ArgumentNullException(nameof(player2));
+        if (player1 == null || player2 == null)
+            throw new ArgumentNullException(player1 == null ? nameof(player1) : nameof(player2));
         if (player1.Symbol == player2.Symbol)
             throw new ArgumentException("Игроки не могут иметь одинаковые символы.");
+
+        Player1 = player1;
+        Player2 = player2;
         CurrentPlayer = player1;
     }
 
@@ -54,22 +57,6 @@ public class GameEngine
         UpdateResult();
         if (!IsGameOver) SwitchPlayer();
         return true;
-    }
-
-    /// <summary>
-    /// Выполняет ход бота через <see cref="BotAI"/>.
-    /// Вызывать только когда <see cref="CurrentPlayer"/> является ботом.
-    /// </summary>
-    /// <returns>Координаты клетки, в которую сходил бот.</returns>
-    /// <exception cref="InvalidOperationException">Если текущий игрок не бот или игра окончена.</exception>
-    public (int row, int col) MakeBotMove()
-    {
-        if (!CurrentPlayer.IsBot || IsGameOver)
-            throw new InvalidOperationException("Сейчас не ход бота.");
-
-        var move = BotAI.GetBestMove(Board, CurrentPlayer.Symbol);
-        MakeMove(move.row, move.col);
-        return move;
     }
 
     /// <summary>
@@ -124,7 +111,6 @@ public class GameEngine
     /// <summary>
     /// Возвращает игрока с указанным символом, или <c>null</c> если не найден.
     /// </summary>
-    /// <param name="symbol">Символ для поиска.</param>
     private Player? GetPlayerBySymbol(CellValue symbol) =>
         Player1.Symbol == symbol ? Player1 : Player2.Symbol == symbol ? Player2 : null;
 }
