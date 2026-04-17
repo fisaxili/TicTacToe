@@ -1,101 +1,202 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TicTacToe.Logic;
 
 namespace TicTacToe.Tests;
 
+[TestClass]
 public class GameEngineTests
 {
-    private static GameEngine CreateGame() =>
-        new GameEngine(new Player("Игрок1", CellValue.X), new Player("Игрок2", CellValue.O));
-
-    [Fact]
-    public void Constructor_SameSymbols_Throws()
+    private static GameEngine CreateEngine()
     {
-        Assert.Throws<ArgumentException>(() =>
-            new GameEngine(new Player("A", CellValue.X), new Player("B", CellValue.X)));
+        var p1 = new Player("Игрок 1", CellValue.X);
+        var p2 = new Player("Игрок 2", CellValue.O);
+        return new GameEngine(p1, p2);
     }
 
-    [Fact]
-    public void MakeMove_SwitchesPlayer()
+    // Конструктор
+
+    [TestMethod]
+    public void Constructor_SameSymbols_ThrowsArgumentException()
     {
-        var game = CreateGame();
-        var first = game.CurrentPlayer;
-        game.MakeMove(0, 0);
-        Assert.NotEqual(first, game.CurrentPlayer);
+        var p1 = new Player("А", CellValue.X);
+        var p2 = new Player("Б", CellValue.X);
+
+        Assert.ThrowsException<ArgumentException>(
+            () => new GameEngine(p1, p2));
     }
 
-    [Fact]
+    [TestMethod]
+    public void Constructor_NullPlayer_ThrowsArgumentNullException()
+    {
+        var p1 = new Player("А", CellValue.X);
+
+        Assert.ThrowsException<ArgumentNullException>(
+            () => new GameEngine(p1, null!));
+    }
+
+    // MakeMove 
+
+    [TestMethod]
+    public void MakeMove_ValidCell_ReturnsTrue()
+    {
+        var engine = CreateEngine();
+
+        bool result = engine.MakeMove(0, 0);
+
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
     public void MakeMove_OccupiedCell_ReturnsFalse()
     {
-        var game = CreateGame();
-        game.MakeMove(0, 0);
-        Assert.False(game.MakeMove(0, 0));
+        var engine = CreateEngine();
+        engine.MakeMove(0, 0);
+
+        bool result = engine.MakeMove(0, 0);
+
+        Assert.IsFalse(result);
     }
 
-    [Fact]
-    public void MakeMove_WinCondition_SetsResult()
+    [TestMethod]
+    public void MakeMove_SwitchesCurrentPlayer()
     {
-        var game = CreateGame();
-        // X ходит: (0,0),(0,1),(0,2) — побеждает
-        game.MakeMove(0, 0); // X
-        game.MakeMove(1, 0); // O
-        game.MakeMove(0, 1); // X
-        game.MakeMove(1, 1); // O
-        game.MakeMove(0, 2); // X wins
-        Assert.Equal(GameResult.PlayerXWins, game.Result);
-        Assert.True(game.IsGameOver);
+        var engine = CreateEngine();
+        var firstPlayer = engine.CurrentPlayer;
+
+        engine.MakeMove(0, 0);
+
+        Assert.AreNotEqual(firstPlayer, engine.CurrentPlayer);
     }
 
-    [Fact]
-    public void MakeMove_Draw_SetsDrawResult()
+    [TestMethod]
+    public void MakeMove_AfterGameOver_ReturnsFalse()
     {
-        var game = CreateGame();
-        // X O X / O X O / O X O — ничья
-        game.MakeMove(0, 0); // X
-        game.MakeMove(0, 1); // O
-        game.MakeMove(0, 2); // X
-        game.MakeMove(1, 1); // O
-        game.MakeMove(1, 0); // X
-        game.MakeMove(1, 2); // O
-        game.MakeMove(2, 1); // X
-        game.MakeMove(2, 0); // O
-        game.MakeMove(2, 2); // X
-        Assert.Equal(GameResult.Draw, game.Result);
+        var engine = CreateEngine();
+        // X побеждает по первой строке
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+        engine.MakeMove(0, 2); // X выиграл
+
+        bool result = engine.MakeMove(2, 2);
+
+        Assert.IsFalse(result);
     }
 
-    [Fact]
-    public void NewGame_ResetsBoard_KeepsScore()
+    //Результат игры
+
+    [TestMethod]
+    public void MakeMove_XWinsTopRow_ResultIsPlayerXWins()
     {
-        var game = CreateGame();
-        game.MakeMove(0, 0); game.MakeMove(1, 0);
-        game.MakeMove(0, 1); game.MakeMove(1, 1);
-        game.MakeMove(0, 2); // X wins
-        int score = game.Player1.Score;
-        game.NewGame();
-        Assert.Equal(GameResult.None, game.Result);
-        Assert.Equal(score, game.Player1.Score);
+        var engine = CreateEngine();
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+        engine.MakeMove(0, 2);
+
+        Assert.AreEqual(GameResult.PlayerXWins, engine.Result);
+        Assert.IsTrue(engine.IsGameOver);
     }
 
-    [Fact]
-    public void ResetScore_ClearsScores()
+    [TestMethod]
+    public void MakeMove_OWinsColumn_ResultIsPlayerOWins()
     {
-        var game = CreateGame();
-        game.MakeMove(0, 0); game.MakeMove(1, 0);
-        game.MakeMove(0, 1); game.MakeMove(1, 1);
-        game.MakeMove(0, 2); // X wins
-        game.ResetScore();
-        Assert.Equal(0, game.Player1.Score);
-        Assert.Equal(0, game.Player2.Score);
+        var engine = CreateEngine();
+        // X: (0,0),(0,1)  O: (1,0),(1,1),(1,2)
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+        engine.MakeMove(2, 2); engine.MakeMove(1, 2);
+
+        Assert.AreEqual(GameResult.PlayerOWins, engine.Result);
     }
 
-    [Fact]
-    public void Player_EmptyName_Throws()
+    [TestMethod]
+    public void MakeMove_Draw_ResultIsDraw()
     {
-        Assert.Throws<ArgumentException>(() => new Player("", CellValue.X));
+        var engine = CreateEngine();
+        // X O X
+        // X X O
+        // O X O  — ничья (нет победителя)
+        engine.MakeMove(0, 0); engine.MakeMove(0, 1);
+        engine.MakeMove(0, 2); engine.MakeMove(2, 0);
+        engine.MakeMove(1, 0); engine.MakeMove(1, 2);
+        engine.MakeMove(1, 1); engine.MakeMove(2, 2);
+        engine.MakeMove(2, 1);
+
+        Assert.AreEqual(GameResult.Draw, engine.Result);
     }
 
-    [Fact]
-    public void Player_EmptySymbol_Throws()
+    // Счёт 
+
+    [TestMethod]
+    public void MakeMove_XWins_Player1ScoreIncremented()
     {
-        Assert.Throws<ArgumentException>(() => new Player("Test", CellValue.Empty));
+        var engine = CreateEngine();
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+        engine.MakeMove(0, 2);
+
+        Assert.AreEqual(1, engine.Player1.Score);
+        Assert.AreEqual(0, engine.Player2.Score);
+    }
+
+    //  NewGame 
+
+    [TestMethod]
+    public void NewGame_ResetsBoard_AndResult()
+    {
+        var engine = CreateEngine();
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+        engine.MakeMove(0, 2); // X выиграл
+
+        engine.NewGame();
+
+        Assert.AreEqual(GameResult.None, engine.Result);
+        Assert.IsFalse(engine.IsGameOver);
+        Assert.AreEqual(CellValue.Empty, engine.Board[0, 0]);
+    }
+
+    [TestMethod]
+    public void NewGame_PreservesScore()
+    {
+        var engine = CreateEngine();
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+        engine.MakeMove(0, 2); // X выиграл — Score = 1
+
+        engine.NewGame();
+
+        Assert.AreEqual(1, engine.Player1.Score);
+    }
+
+    //ResetScore
+
+    [TestMethod]
+    public void ResetScore_ClearsScoreAndBoard()
+    {
+        var engine = CreateEngine();
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+        engine.MakeMove(0, 2);
+
+        engine.ResetScore();
+
+        Assert.AreEqual(0, engine.Player1.Score);
+        Assert.AreEqual(0, engine.Player2.Score);
+        Assert.AreEqual(GameResult.None, engine.Result);
+    }
+
+    // CurrentPlayer после победы
+
+    [TestMethod]
+    public void MakeMove_WinningMove_CurrentPlayerNotSwitched()
+    {
+        var engine = CreateEngine();
+        engine.MakeMove(0, 0); engine.MakeMove(1, 0);
+        engine.MakeMove(0, 1); engine.MakeMove(1, 1);
+
+        var beforeWin = engine.CurrentPlayer;
+        engine.MakeMove(0, 2); // победный ход
+
+        Assert.AreEqual(beforeWin, engine.CurrentPlayer);
     }
 }
