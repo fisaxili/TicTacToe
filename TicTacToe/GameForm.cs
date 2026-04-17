@@ -25,7 +25,6 @@ public partial class GameForm : Form
 
     /// <summary>
     /// Инициализирует игровую форму и запускает партию.
-    /// Если первым ходит бот — автоматически выполняет его ход.
     /// </summary>
     /// <param name="engine">Настроенный движок игры.</param>
     /// <exception cref="ArgumentNullException">Если <paramref name="engine"/> равен null.</exception>
@@ -35,10 +34,6 @@ public partial class GameForm : Form
         InitializeComponent();
         BuildGrid();
         UpdateUI();
-
-        // Если первым ходит бот — делаем ход сразу
-        if (_engine.CurrentPlayer.IsBot)
-            BotMoveAsync();
     }
 
     /// <summary>
@@ -64,7 +59,7 @@ public partial class GameForm : Form
                     ForeColor = Color.White,
                     Font = new Font("Segoe UI", 36f, FontStyle.Bold),
                     Cursor = Cursors.Hand,
-                    Tag = (r, c)  // сохраняем координаты клетки в Tag
+                    Tag = (r, c)
                 };
                 btn.FlatAppearance.BorderColor = Color.FromArgb(70, 70, 100);
                 btn.FlatAppearance.BorderSize = 2;
@@ -78,46 +73,22 @@ public partial class GameForm : Form
 
     /// <summary>
     /// Обработчик клика по клетке поля.
-    /// Выполняет ход игрока, обновляет UI и при необходимости запускает ход бота.
+    /// Выполняет ход игрока и обновляет UI.
     /// </summary>
     private void Cell_Click(object? sender, EventArgs e)
     {
-        // Игнорируем клик если игра окончена или сейчас ход бота
-        if (_engine.IsGameOver || _engine.CurrentPlayer.IsBot) return;
+        if (_engine.IsGameOver) return;
 
         var (row, col) = ((int, int))((Button)sender!).Tag!;
         if (!_engine.MakeMove(row, col)) return;
 
         UpdateCellUI(row, col);
         UpdateUI();
-
-        // Если после хода игрока наступает очередь бота — запускаем
-        if (!_engine.IsGameOver && _engine.CurrentPlayer.IsBot)
-            BotMoveAsync();
-    }
-
-    /// <summary>
-    /// Асинхронно выполняет ход бота с небольшой задержкой для реалистичности.
-    /// На время хода бота поле блокируется.
-    /// </summary>
-    private async void BotMoveAsync()
-    {
-        SetBoardEnabled(false);
-        await Task.Delay(400); // пауза имитирует "раздумье" бота
-
-        if (_engine.IsGameOver) { SetBoardEnabled(true); return; }
-
-        var (r, c) = _engine.MakeBotMove();
-        UpdateCellUI(r, c);
-        UpdateUI();
-        SetBoardEnabled(true);
     }
 
     /// <summary>
     /// Обновляет визуальное состояние одной клетки после хода.
     /// </summary>
-    /// <param name="row">Строка клетки (0–2).</param>
-    /// <param name="col">Столбец клетки (0–2).</param>
     private void UpdateCellUI(int row, int col)
     {
         var btn = _cells[row, col];
@@ -129,7 +100,6 @@ public partial class GameForm : Form
 
     /// <summary>
     /// Обновляет метки статуса и счёта в соответствии с текущим состоянием игры.
-    /// При окончании игры подсвечивает победную линию и выводит результат.
     /// </summary>
     private void UpdateUI()
     {
@@ -168,18 +138,16 @@ public partial class GameForm : Form
     {
         for (int i = 0; i < 3; i++)
         {
-            if (CheckLine((i, 0), (i, 1), (i, 2))) return; // горизонталь
-            if (CheckLine((0, i), (1, i), (2, i))) return; // вертикаль
+            if (CheckLine((i, 0), (i, 1), (i, 2))) return;
+            if (CheckLine((0, i), (1, i), (2, i))) return;
         }
-        CheckLine((0, 0), (1, 1), (2, 2)); // главная диагональ
-        CheckLine((0, 2), (1, 1), (2, 0)); // побочная диагональ
+        CheckLine((0, 0), (1, 1), (2, 2));
+        CheckLine((0, 2), (1, 1), (2, 0));
     }
 
     /// <summary>
-    /// Проверяет, образуют ли три клетки победную линию.
-    /// Если да — подсвечивает их зелёным цветом.
+    /// Проверяет, образуют ли три клетки победную линию, и подсвечивает их.
     /// </summary>
-    /// <returns><c>true</c> если линия победная, иначе <c>false</c>.</returns>
     private bool CheckLine((int r, int c) a, (int r, int c) b, (int r, int c) c2)
     {
         var va = _engine.Board[a.r, a.c];
@@ -198,19 +166,6 @@ public partial class GameForm : Form
     }
 
     /// <summary>
-    /// Включает или отключает все свободные клетки поля.
-    /// Используется для блокировки поля во время хода бота.
-    /// </summary>
-    /// <param name="enabled"><c>true</c> — разблокировать, <c>false</c> — заблокировать.</param>
-    private void SetBoardEnabled(bool enabled)
-    {
-        for (int r = 0; r < 3; r++)
-            for (int c = 0; c < 3; c++)
-                if (_engine.Board[r, c] == CellValue.Empty)
-                    _cells[r, c].Enabled = enabled;
-    }
-
-    /// <summary>
     /// Обработчик кнопки "Новая игра". Сбрасывает поле, сохраняя счёт.
     /// </summary>
     private void btnNewGame_Click(object sender, EventArgs e)
@@ -218,12 +173,10 @@ public partial class GameForm : Form
         _engine.NewGame();
         ResetBoardUI();
         UpdateUI();
-        if (_engine.CurrentPlayer.IsBot) BotMoveAsync();
     }
 
     /// <summary>
     /// Обработчик кнопки "Сбросить счёт".
-    /// Запрашивает подтверждение и обнуляет счёт обоих игроков.
     /// </summary>
     private void btnResetScore_Click(object sender, EventArgs e)
     {
@@ -233,7 +186,6 @@ public partial class GameForm : Form
             _engine.ResetScore();
             ResetBoardUI();
             UpdateUI();
-            if (_engine.CurrentPlayer.IsBot) BotMoveAsync();
         }
     }
 
