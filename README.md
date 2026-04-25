@@ -107,4 +107,9 @@ dotnet run --project TicTacToe/TicTacToe.csproj
 ```bash
 dotnet test TicTacToe.Tests/TicTacToe.Tests.csproj
 ```
+### Системные требования:
+
+- .NET 8 SDK или выше.
+
+- Windows 10/11 (для работы Windows Forms).
 
